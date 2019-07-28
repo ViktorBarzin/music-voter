@@ -4,8 +4,9 @@ from serializer import serialize_room
 
 def main() -> None:
     # breakpoint()
-    user = User('gosho')
+    user = User(username='gosho')
     rr = Room('title', user)
+    breakpoint()
     ss = serialize_room(rr)
     print(ss)
 
