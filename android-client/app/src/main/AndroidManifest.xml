@@ -18,6 +18,8 @@
         </activity>
         <activity android:name=".CreateActivity">
         </activity>
+        <activity android:name=".JoinActivity">
+        </activity>
     </application>
 
 </manifest>
