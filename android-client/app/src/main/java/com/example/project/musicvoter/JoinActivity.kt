@@ -11,9 +11,15 @@ class JoinActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_join)
 
-        val rooms = arrayListOf<String>("Room1", "Room2", "Room3")
-        var dataAdapter = ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, rooms)
+        val jsonHandler = JSONHandler()
+        val info = jsonHandler.outputFromGet()
+
+        val jsonParser = JSONParser()
+
+        val rooms = jsonParser.parseJSON(info)
+        var dataAdapter = ArrayAdapter<Room>(this, android.R.layout.simple_spinner_item, rooms)
         spinnerJoin.adapter = dataAdapter
+
     }
 
 }
