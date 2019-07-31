@@ -74,7 +74,7 @@ def _vote_post(request: LocalProxy, room: Room) -> Response:
         url = request.form['url']
         voter_username = request.form['username']  # replace with sessions
     except KeyError:
-        return get_error_response(f'Required params: "title", "url"')
+        return get_error_response(f'Required params: "title", "url", "username"')
 
     vote_option = VoteOption(title=title, url=url)
     voter = get_user_from_username(voter_username)
