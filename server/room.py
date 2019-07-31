@@ -10,7 +10,7 @@ class Room:
     password: Optional[str]
     owner: 'User'
     users: Optional[List['User']]
-    votes: Dict['VoteOption', List['User']]
+    votes: Dict[str, List['User']]  # url -> List[User]
 
     def __init__(self, name: str, owner: 'User', password: Optional[str] = None, joined_users: Optional[List['User']] = None):
         self.id = str(uuid.uuid4())
@@ -26,13 +26,13 @@ class Room:
     def vote(self, user: 'User', option: 'VoteOption') -> None:
         # if options is new, put it in votes
         if option not in self.votes:
-            self.votes[option].append(user)
+            self.votes[option.url].append(user)
         else:
             # If user has already voted, skip
-            if user in self.votes[option]:
+            if user in self.votes[option.url]:
                 return
             else:
-                self.votes[option].append(user)
+                self.votes[option.url].append(user)
 
 
 @dataclass
@@ -44,7 +44,7 @@ class User:
         self.username = username
 
     def __hash__(self) -> int:
-        return hash(str(self.__dict__))
+        return hash(self.username)
 
     def _validate_username(self, username: str) -> str:
         if not username:
@@ -52,8 +52,11 @@ class User:
         return username
 
 
-@dataclass(eq=True, unsafe_hash=True)
+@dataclass(eq=True)
 class VoteOption:
     title: str
     url: str
+
+    def __hash__(self) -> int:
+        return hash(self.title) * hash(self.url)
 

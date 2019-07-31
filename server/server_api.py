@@ -8,6 +8,7 @@ app = Flask(__name__)
 from room import Room, User, VoteOption
 from storage import get_user_from_username, add_room, get_rooms, add_user, get_room_by_name
 from serializer import serialize_rooms
+from werkzeug.local import LocalProxy
 
 
 def get_error_response(msg: str, code: int = 400) -> Response:
@@ -55,18 +56,19 @@ def users() -> Response:
 
 
 @app.route('/api/vote/<room_name>', methods=['GET', 'POST'])
-def vote(room_name: str = ''):
+def vote(room_name: str = '') -> Response:
     room = get_room_by_name(urllib.parse.unquote(room_name))
     if not room:
         return get_error_response(f'Room with name: {room_name} not found.')
 
     if request.method == 'POST':
-        return _vote_post(request, room)
+        return _vote_post(request, room)  # type: ignore
     elif request.method == 'GET':
-        return _vote_get(request, room)
+        return _vote_get(request, room)  # type: ignore
+    return get_error_response(f'Invalid request method: {request.method}')
 
 
-def _vote_post(request, room: Room) -> Response:
+def _vote_post(request: LocalProxy, room: Room) -> Response:
     try:
         title = request.form['title']
         url = request.form['url']
@@ -82,14 +84,14 @@ def _vote_post(request, room: Room) -> Response:
     return get_ok_response()
 
 
-def _vote_get(request, room: Room) -> Response:
+def _vote_get(request: LocalProxy, room: Room) -> Response:
     """
     Get all vote options and number of users that voted for each
     """
     serialized: Dict[str, Dict[str, Any]] = defaultdict(dict)
 
-    for vote_option, voters in room.votes.items():
-        serialized['vote_options'][vote_option.title] = {'url': vote_option.url, 'voters': voters}
+    for vote_option_url, voters in room.votes.items():
+        serialized['vote_options'][vote_option_url] = {'url': vote_option_url, 'voters': voters}
     return Response(json.dumps(serialized, default=lambda x: x.__dict__), status=200, mimetype='application/json')
 
 

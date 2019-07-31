@@ -17,7 +17,6 @@ def serialize_room(room: Room) -> Dict[str, Any]:
     This is where the json format is specified
     """
     result = {}
-    breakpoint()
     for key, val in room.__dict__.items():
         if type(val) in hashable:
             result[key] = val
