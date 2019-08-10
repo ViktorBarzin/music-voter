@@ -23,7 +23,7 @@ class LoginActivity : AppCompatActivity() {
 
             val message = "username=$username"
 
-            val url = URL("http://6e43fba8.ngrok.io/api/users")
+            val url = URL("http://musicvoter.viktorbarzin.me/api/users")
 
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "POST"

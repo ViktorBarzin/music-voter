@@ -45,7 +45,7 @@ class CreateActivity : AppCompatActivity() {
 
             val message = "name=${name.text}&owner_username=$username&password=${pass.text}"
 
-            val url = URL("http://6e43fba8.ngrok.io/api/rooms")
+            val url = URL("http://musicvoter.viktorbarzin.me/api/rooms")
 
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "POST"
@@ -76,7 +76,7 @@ class CreateActivity : AppCompatActivity() {
                         System.exit(0)
 
                     } catch (exception: Exception) {
-                        throw Exception("Exception while push the notification  $exception.message")
+                        throw Exception("Exception while push the notification  $exception")
                     }
                 }
 
