@@ -34,21 +34,29 @@ class LoginActivity : AppCompatActivity() {
             connection.setRequestProperty("charset", "utf-8")
             connection.setRequestProperty("Content-lenght", postData.size.toString())
 
-            Thread(Runnable {
-                try {
-                    val outputStream: DataOutputStream = DataOutputStream(connection.outputStream)
-                    outputStream.write(postData)
-                    outputStream.flush()
-                } catch (exception: Exception) {
-                    exception.printStackTrace()
-                }
+            if(registerCheckBox.isChecked){
+                Thread(Runnable {
+                    try {
+                        val outputStream: DataOutputStream = DataOutputStream(connection.outputStream)
+                        outputStream.write(postData)
+                        outputStream.flush()
+                    } catch (exception: Exception) {
+                        exception.printStackTrace()
+                    }
 
-                if (connection.responseCode == HttpURLConnection.HTTP_OK) {
-                    val intent = Intent(this, MainActivity::class.java)
-                    intent.putExtra("username", username)
-                    startActivity(intent)
-                }
-            }).start()
+                    if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+                        val intent = Intent(this, MainActivity::class.java)
+                        intent.putExtra("username", username)
+                        startActivity(intent)
+                    }
+                }).start()
+            } else {
+                val intent = Intent(this, MainActivity::class.java)
+                intent.putExtra("username", username)
+                startActivity(intent)
+            }
+
+
         }
     }
 }
