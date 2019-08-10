@@ -1,13 +1,8 @@
-from room import Room, User
-from serializer import serialize_room
+from server_api import app
 
 
 def main() -> None:
-    # breakpoint()
-    user = User('gosho')
-    rr = Room('title', user)
-    ss = serialize_room(rr)
-    print(ss)
+    app.run(host='0.0.0.0', debug=True, port=5000)
 
 
 if __name__ == "__main__":
