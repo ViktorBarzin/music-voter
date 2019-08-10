@@ -1,5 +1,6 @@
 package com.example.project.musicvoter
 
+import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
@@ -8,6 +9,7 @@ import kotlinx.android.synthetic.main.activity_join.*
 import android.widget.AdapterView
 import android.widget.AdapterView.OnItemSelectedListener
 import android.widget.Toast
+import kotlinx.android.synthetic.main.activity_create.*
 import java.io.DataOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
@@ -50,6 +52,11 @@ class JoinActivity : AppCompatActivity() {
         buttonJoin.setOnClickListener {
             if(canJoin){
                 sendPost(username.toString(), roomName)
+
+                val intent = Intent(this@JoinActivity, RoomActivity::class.java)
+                intent.putExtra("username", username.toString())
+                intent.putExtra("group", roomName)
+                startActivity(intent)
 
             } else {
                 Toast.makeText(this@JoinActivity, "Please select a Room to join", Toast.LENGTH_SHORT).show()

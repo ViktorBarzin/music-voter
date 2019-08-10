@@ -18,7 +18,7 @@ import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import android.util.DisplayMetrics
-import android.view.ViewGroup
+import android.view.View
 
 
 class RoomActivity : AppCompatActivity() {
@@ -27,6 +27,31 @@ class RoomActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_room)
+
+        val rooms = JSONParser().parseJSON(JSONHandler().outputFromGet())
+        displayInfoForRoom(rooms)
+
+    }
+
+    private fun displayInfoForRoom(rooms: List<Room>){
+        var myRoom: Room? = null
+       // var targetName = getSharedPreferences(MY_PREFS_NAME, Context.MODE_PRIVATE).getString("group", null)
+        //TODO Fix
+        val targetName = "test"
+        for(room in rooms){
+            if(room.name.equals(targetName)){
+                myRoom = room
+                break
+            }
+
+        }
+
+        if (myRoom != null) {
+            for(voteOption in myRoom.votes){
+                tableLayout.addView(createNewRow(voteOption.key, voteOption.value.size, true))
+
+            }
+        }
     }
 
     private fun makeVote(link: String?, username: String, group: String){
@@ -48,7 +73,7 @@ class RoomActivity : AppCompatActivity() {
         t.start()
         t.join()
 
-        tableLayout.addView(createNewRow(title))
+        tableLayout.addView(createNewRow(title, 5, true))
 
         var url = URL("http://musicvoter.viktorbarzin.me/api/vote/$group")
 
@@ -78,7 +103,7 @@ class RoomActivity : AppCompatActivity() {
         Toast.makeText(this, "Text Copied", Toast.LENGTH_SHORT).show()
     }
 
-    private fun createNewRow(title: String): TableRow? {
+    private fun createNewRow(title: String, votes: Int, checked: Boolean): TableRow? {
         val row = TableRow(this)
         val layoutParams = TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.MATCH_PARENT)
 
@@ -90,10 +115,17 @@ class RoomActivity : AppCompatActivity() {
         row.layoutParams = layoutParams
         val checkBox = CheckBox(this)
         val textView = TextView(this)
-        textView.width = (width * 0.8).toInt()
+        val numVotes = TextView(this)
+
+        textView.width = (width * 0.5).toInt()
+        textView.height= (height * 0.2).toInt()
         textView.text = title
 
+        numVotes.width = (width* 0.1).toInt()
+        numVotes.text = votes.toString()
+
         row.addView(textView)
+        row.addView(numVotes)
         row.addView(checkBox)
 
         return row
@@ -139,7 +171,7 @@ class RoomActivity : AppCompatActivity() {
         if (extras.get(Intent.EXTRA_TEXT) != null) {
 
             var link = prefs.getString("url", extras.get(Intent.EXTRA_TEXT).toString())
-            makeVote(link,username, group)
+            //makeVote(link,username, group)
             extras.remove(Intent.EXTRA_TEXT)
         }
 
@@ -158,8 +190,38 @@ class RoomActivity : AppCompatActivity() {
         if(intent != null){
             editor.putString("url", intent.extras.get(Intent.EXTRA_TEXT).toString())
             editor.apply()
+            //TODO:FIX
+            var groupName = getSharedPreferences(MY_PREFS_NAME, Context.MODE_PRIVATE).getString("group", null)
+            var videoURL = getSharedPreferences(MY_PREFS_NAME, Context.MODE_PRIVATE).getString("url", null)
+            sendVotingPost("gosho", groupName, "TestTitle", videoURL)
         }
 
+    }
+
+    private fun sendVotingPost(username: String, roomName: String, title: String, videoURL:String){
+        val url = URL("http://musicvoter.viktorbarzin.me/api/vote/$roomName")
+        val connection = url.openConnection() as HttpURLConnection
+        connection.requestMethod = "POST"
+
+        val messageToSent = "title=$title&url=$videoURL&username=$username"
+        val postData: ByteArray = messageToSent.toByteArray(StandardCharsets.UTF_8)
+
+        connection.setRequestProperty("charset", "utf-8")
+        connection.setRequestProperty("Content-lenght", postData.size.toString())
+
+        Thread(Runnable {
+            try {
+                val outputStream = DataOutputStream(connection.outputStream)
+                outputStream.write(postData)
+                outputStream.flush()
+            } catch (exception: Exception) {
+                exception.printStackTrace()
+            }
+
+            if (connection.responseCode == HttpURLConnection.HTTP_OK) {
+
+            }
+        }).start()
     }
 
     @Override
@@ -169,4 +231,10 @@ class RoomActivity : AppCompatActivity() {
         getSharedPreferences(MY_PREFS_NAME, Context.MODE_PRIVATE).edit().clear().apply()
 
     }
+
+    fun getVoteOptions(view: View){
+        val rooms = JSONParser().parseJSON(JSONHandler().outputFromGet())
+        displayInfoForRoom(rooms)
+    }
 }
+
