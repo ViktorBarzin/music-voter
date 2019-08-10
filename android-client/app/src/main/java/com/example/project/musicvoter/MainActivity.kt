@@ -8,12 +8,12 @@ import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         val bundle = intent.extras
-
         val username = bundle.get("username")
 
         Toast.makeText(this, "Welcome $username", Toast.LENGTH_SHORT).show()
@@ -21,6 +21,7 @@ class MainActivity : AppCompatActivity() {
 
         joinButton.setOnClickListener{
             val intent = Intent(this, JoinActivity::class.java)
+            intent.putExtra("username", username.toString())
             startActivity(intent)
         }
 

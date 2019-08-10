@@ -8,7 +8,7 @@ import java.net.URL
 
 
 class JSONHandler {
-    val httpURLConnectionurl = URL("http://6e43fba8.ngrok.io/api/rooms")
+    val httpURLConnectionurl = URL("http://musicvoter.viktorbarzin.me/api/rooms")
     val urlConnection = httpURLConnectionurl.openConnection() as HttpURLConnection
     var response = ""
 
