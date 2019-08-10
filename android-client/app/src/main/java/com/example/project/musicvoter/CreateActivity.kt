@@ -41,8 +41,6 @@ class CreateActivity : AppCompatActivity() {
             val name = roomName as EditText
             val pass = roomPassword as EditText
 
-
-
             val message = "name=${name.text}&owner_username=$username&password=${pass.text}"
 
             val url = URL("http://musicvoter.viktorbarzin.me/api/rooms")
@@ -82,6 +80,7 @@ class CreateActivity : AppCompatActivity() {
 
                 val intent = Intent(this, RoomActivity::class.java)
                 intent.putExtra("username", username.toString())
+                intent.putExtra("group", roomName.text)
                 startActivity(intent)
 
             }).start()
