@@ -1,9 +1,11 @@
 package com.example.project.musicvoter
 
+import android.content.Intent
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.EditText
+import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_create.*
 import java.io.BufferedReader
 import java.io.DataOutputStream
@@ -21,6 +23,12 @@ class CreateActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_create)
 
+        val bundle = intent.extras
+
+        val username = bundle.get("username")
+
+        Toast.makeText(this, "Welcome $username", Toast.LENGTH_SHORT).show()
+
         //create a list of items for the spinner.
         val items = arrayOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")
         //create an adapter to describe how the items are displayed, adapters are used in several places in android.
@@ -35,9 +43,9 @@ class CreateActivity : AppCompatActivity() {
 
 
 
-            val message = "name=${name.text}&owner_uid=${UUID.randomUUID()}&password=${pass.text}"
+            val message = "name=${name.text}&owner_username=$username&password=${pass.text}"
 
-            val url = URL("http://4562829a.ngrok.io/api/rooms")
+            val url = URL("http://musicvoter.viktorbarzin.me/api/rooms")
 
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "POST"
@@ -68,9 +76,13 @@ class CreateActivity : AppCompatActivity() {
                         System.exit(0)
 
                     } catch (exception: Exception) {
-                        throw Exception("Exception while push the notification  $exception.message")
+                        throw Exception("Exception while push the notification  $exception")
                     }
                 }
+
+                val intent = Intent(this, RoomActivity::class.java)
+                intent.putExtra("username", username.toString())
+                startActivity(intent)
 
             }).start()
 
