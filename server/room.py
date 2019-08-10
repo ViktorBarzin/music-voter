@@ -9,7 +9,7 @@ class Room:
     name: str
     password: Optional[str]
     owner: 'User'
-    users: Optional[List['User']]
+    users: List['User']  # List becuase sets are hard ot serialize
     votes: Dict[str, List['User']]  # url -> List[User]
 
     def __init__(self, name: str, owner: 'User', password: Optional[str] = None, joined_users: Optional[List['User']] = None):
@@ -29,10 +29,14 @@ class Room:
             self.votes[option.url].append(user)
         else:
             # If user has already voted, skip
-            if user in self.votes[option.url]:
+            if user.username in self.votes[option.url]:
                 return
             else:
                 self.votes[option.url].append(user)
+
+    def join_user(self, user: 'User') -> None:
+        if user not in self.users:
+            self.users.append(user)
 
 
 @dataclass

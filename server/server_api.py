@@ -95,3 +95,20 @@ def _vote_get(request: LocalProxy, room: Room) -> Response:
     return Response(json.dumps(serialized, default=lambda x: x.__dict__), status=200, mimetype='application/json')
 
 
+@app.route('/api/join/<room_name>', methods=['POST'])
+def join(room_name: str = '') -> Response:
+    room = get_room_by_name(urllib.parse.unquote(room_name))
+    if not room:
+        return get_error_response(f'Room with name: {room_name} not found.')
+
+    try:
+        username = request.form['username']
+    except KeyError:
+        return get_error_response(f'Invalid form, required params: "username"')
+
+    user = get_user_from_username(username)
+    if not user:
+        return get_error_response(f'User with username "{username}" not found')
+
+    room.join_user(user)
+    return get_ok_response()
