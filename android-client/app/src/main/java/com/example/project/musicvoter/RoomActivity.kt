@@ -1,13 +1,13 @@
 package com.example.project.musicvoter
 
-import android.app.ActionBar
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.content.ClipboardManager
-import android.view.View
+import android.widget.CheckBox
+import android.widget.TableRow
 import android.widget.TextView
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_room.*
@@ -17,6 +17,8 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import android.util.DisplayMetrics
+import android.view.ViewGroup
 
 
 class RoomActivity : AppCompatActivity() {
@@ -46,7 +48,7 @@ class RoomActivity : AppCompatActivity() {
         t.start()
         t.join()
 
-        optionsLayout.addView(createNewTextView(title))
+        tableLayout.addView(createNewRow(title))
 
         var url = URL("http://musicvoter.viktorbarzin.me/api/vote/$group")
 
@@ -76,12 +78,25 @@ class RoomActivity : AppCompatActivity() {
         Toast.makeText(this, "Text Copied", Toast.LENGTH_SHORT).show()
     }
 
-    private fun createNewTextView(songTitle: String): View? {
-        var lparams = ActionBar.LayoutParams(ActionBar.LayoutParams.WRAP_CONTENT, ActionBar.LayoutParams.WRAP_CONTENT)
-        var textView = TextView(this)
-        textView.layoutParams = lparams
-        textView.text = songTitle
-        return textView
+    private fun createNewRow(title: String): TableRow? {
+        val row = TableRow(this)
+        val layoutParams = TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.MATCH_PARENT)
+
+        val displayMetrics = DisplayMetrics()
+        windowManager.defaultDisplay.getMetrics(displayMetrics)
+        val height = displayMetrics.heightPixels
+        val width = displayMetrics.widthPixels
+
+        row.layoutParams = layoutParams
+        val checkBox = CheckBox(this)
+        val textView = TextView(this)   
+        textView.width = (width * 0.8).toInt()
+        textView.text = title
+
+        row.addView(textView)
+        row.addView(checkBox)
+
+        return row
     }
 
     @Override
@@ -96,8 +111,6 @@ class RoomActivity : AppCompatActivity() {
             editor.putString("group", extras.get("group").toString())
             editor.apply()
         }
-
-        intent.extras.clear()
 
         println("Application stopped.-----------------------------------------")
     }
@@ -123,12 +136,37 @@ class RoomActivity : AppCompatActivity() {
             group = extras.get("group").toString()
         }
 
+        if (extras.get(Intent.EXTRA_TEXT) != null) {
 
-        if (extras.getString(Intent.EXTRA_TEXT) != null) {
-            var link = extras.getString(Intent.EXTRA_TEXT)
+            var link = prefs.getString("url", extras.get(Intent.EXTRA_TEXT).toString())
             makeVote(link,username, group)
             extras.remove(Intent.EXTRA_TEXT)
         }
+
+    }
+
+    @Override
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+
+        handleSendIntent(intent)
+    }
+
+    private fun handleSendIntent(intent: Intent?) {
+        var editor = getSharedPreferences(MY_PREFS_NAME, Context.MODE_PRIVATE).edit()
+
+        if(intent != null){
+            editor.putString("url", intent.extras.get(Intent.EXTRA_TEXT).toString())
+            editor.apply()
+        }
+
+    }
+
+    @Override
+    override fun onDestroy() {
+        super.onDestroy()
+
+        getSharedPreferences(MY_PREFS_NAME, Context.MODE_PRIVATE).edit().clear().apply()
 
     }
 }
