@@ -1,4 +1,5 @@
 package com.example.project.musicvoter
+import android.widget.Toast
 import java.io.BufferedInputStream
 import java.io.BufferedReader
 import java.io.InputStream
@@ -12,17 +13,20 @@ class JSONHandler {
     val urlConnection = httpURLConnectionurl.openConnection() as HttpURLConnection
     var response = ""
 
-
     fun outputFromGet(): String{
+        if(httpURLConnectionurl != null){
+            val t =  Thread(Runnable {
+                val inputStream = BufferedInputStream(urlConnection.getInputStream())
+                response  = httpURLConnectionurl.readText()
 
-       val t =  Thread(Runnable {
-            val inputStream = BufferedInputStream(urlConnection.getInputStream())
-            response  = httpURLConnectionurl.readText()
+            })
 
-        })
+            t.start()
+            t.join()
+        }else {
+            Toast.makeText(JoinActivity(), "Unable to connect to Server", Toast.LENGTH_SHORT).show()
+        }
 
-        t.start()
-        t.join()
 
         return response
 
