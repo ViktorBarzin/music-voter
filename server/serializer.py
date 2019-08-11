@@ -1,11 +1,11 @@
 import json
-from typing import Any, Dict, Set
+from typing import Any, Dict, List
 from room import Room, VoteOption
 
 hashable = {str, int, float, bool, None, set}
 
 
-def serialize_rooms(rooms: Set[Room]) -> str:
+def serialize_rooms(rooms: List[Room]) -> str:
     serialized = [serialize_room(x) for x in rooms]
     result = {"rooms": serialized}
     return json.dumps(result, default=lambda o: o.__dict__)

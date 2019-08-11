@@ -5,15 +5,15 @@ import uuid
 
 
 class Room:
-    id: str
+    id: int
     name: str
     password: Optional[str]
     owner: 'User'
     users: List['User']  # List becuase sets are hard ot serialize
     votes: Dict[str, List['User']]  # url -> List[User]
 
-    def __init__(self, name: str, owner: 'User', password: Optional[str] = None, joined_users: Optional[List['User']] = None):
-        self.id = str(uuid.uuid4())
+    def __init__(self, name: str, owner: 'User', room_id: int = 0, password: Optional[str] = None, joined_users: Optional[List['User']] = None):
+        self.id = room_id or int(uuid.uuid4())
         self.name = name
         self.owner = owner
         self.password = password
@@ -41,11 +41,13 @@ class Room:
 
 @dataclass
 class User:
+    id: int
     username: str  # add some validation here at some point
 
-    def __init__(self, username: str) -> None:
+    def __init__(self, username: str, uid: int = 0) -> None:
         self._validate_username(username)
         self.username = username
+        self.id = uid or int(uuid.uuid4())
 
     def __hash__(self) -> int:
         return hash(self.username)
