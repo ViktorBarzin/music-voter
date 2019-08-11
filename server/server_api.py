@@ -6,7 +6,7 @@ from flask import Flask, request, Response
 app = Flask(__name__)
 
 from room import Room, User, VoteOption
-from storage import get_user_from_username, add_room, get_rooms, add_user, get_room_by_name
+from storage import get_user_from_username, add_room, get_rooms, add_user, get_room_by_name, vote
 from serializer import serialize_rooms
 from werkzeug.local import LocalProxy
 
@@ -36,7 +36,10 @@ def rooms() -> Response:
             if not owner:
                 return get_error_response(f'User {owner_username} not found.')
             room = Room(name=room_name, owner=owner, password=password)
-            add_room(room)
+            try:
+                add_room(room)
+            except ValueError as e:
+                return get_error_response(str(e))
 
             return get_ok_response()
         except KeyError:
@@ -52,11 +55,13 @@ def users() -> Response:
         add_user(user)
     except KeyError:
         return get_error_response('Invalid form, required params: "username"')
+    except ValueError as e:
+        return get_error_response(str(e))
     return get_ok_response()
 
 
 @app.route('/api/vote/<room_name>', methods=['GET', 'POST'])
-def vote(room_name: str = '') -> Response:
+def vote_endpoint(room_name: str = '') -> Response:
     room = get_room_by_name(urllib.parse.unquote(room_name))
     if not room:
         return get_error_response(f'Room with name: {room_name} not found.')
@@ -70,17 +75,15 @@ def vote(room_name: str = '') -> Response:
 
 def _vote_post(request: LocalProxy, room: Room) -> Response:
     try:
-        title = request.form['title']
         url = request.form['url']
         voter_username = request.form['username']  # replace with sessions
     except KeyError:
         return get_error_response(f'Required params: "title", "url", "username"')
 
-    vote_option = VoteOption(title=title, url=url)
     voter = get_user_from_username(voter_username)
     if not voter:
         return get_error_response(f'User {voter_username} not found.')
-    room.vote(voter, vote_option)
+    vote(voter, url, room.name)
     return get_ok_response()
 
 
