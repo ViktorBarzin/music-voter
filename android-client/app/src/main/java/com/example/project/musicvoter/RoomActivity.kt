@@ -56,7 +56,7 @@ class RoomActivity : AppCompatActivity() {
 
         if (myRoom != null) {
             for(voteOption in myRoom.votes){
-                tableLayout.addView(createNewRow(getSontTitle(voteOption.key), voteOption.value.size, true))
+                tableLayout.addView(createNewRow(getSongTitle(voteOption.key), voteOption.value.size, true))
 
             }
         }
@@ -107,7 +107,7 @@ class RoomActivity : AppCompatActivity() {
         Toast.makeText(this, "Text Copied", Toast.LENGTH_SHORT).show()
     }
 
-    private fun getSontTitle(songURL: String): String{
+    private fun getSongTitle(songURL: String): String{
         var title: JSONObject? = null
         var response: String
         var t = Thread( Runnable {
