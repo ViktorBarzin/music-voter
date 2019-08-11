@@ -5,7 +5,7 @@ from typing import Any, Dict
 from flask import Flask, request, Response
 app = Flask(__name__)
 
-from room import Room, User, VoteOption
+from room import Room, User
 from storage import get_user_from_username, add_room, get_rooms, add_user, get_room_by_name, vote
 from serializer import serialize_rooms
 from werkzeug.local import LocalProxy
@@ -76,14 +76,18 @@ def vote_endpoint(room_name: str = '') -> Response:
 def _vote_post(request: LocalProxy, room: Room) -> Response:
     try:
         url = request.form['url']
+        is_voting = True if request.form['add_vote'] == 'true' else False if request.form['add_vote'] == 'false' else None
         voter_username = request.form['username']  # replace with sessions
     except KeyError:
-        return get_error_response(f'Required params: "title", "url", "username"')
+        return get_error_response(f'Required params: "url", "username", "add_vote"')
 
     voter = get_user_from_username(voter_username)
     if not voter:
         return get_error_response(f'User {voter_username} not found.')
-    vote(voter, url, room.name)
+    if not is_voting:
+        add_vote_param = request.form['add_vote']
+        return get_error_response(f'"add_vote" param must be either "true" or "false", got {add_vote_param}')
+    vote(voter, url, room.name, is_voting)
     return get_ok_response()
 
 

@@ -1,11 +1,17 @@
 package com.example.project.musicvoter
 
-import android.support.v7.app.AppCompatActivity
-import android.os.Bundle
 import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.content.ClipboardManager
+import android.os.Bundle
+import android.support.v7.app.AppCompatActivity
+import android.view.View
+import android.widget.CheckBox
+import android.widget.CompoundButton
+import android.widget.TableRow
+import android.widget.TextView
+import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_room.*
 import org.json.JSONObject
 import java.io.DataOutputStream
@@ -13,20 +19,22 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import android.util.DisplayMetrics
-import android.view.View
-import android.view.ViewGroup
-import android.widget.*
 
 
 class RoomActivity : AppCompatActivity() {
     var MY_PREFS_NAME = "MyPrefsFile"
+    private lateinit var username: String
+    private lateinit var groupName: String
 
     //var title = "" //title of the song from YouTube
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_room)
+        this.username = intent.extras!!.getString("username")!!
+        this.groupName = intent.extras!!.getString("group")!!
+
+        Toast.makeText(this, "Welcome " + this.username, Toast.LENGTH_SHORT).show()
 
         val rooms = JSONParser().parseJSON(JSONHandler().outputFromGet())
         displayInfoForRoom(rooms)
@@ -37,9 +45,8 @@ class RoomActivity : AppCompatActivity() {
         var myRoom: Room? = null
        // var targetName = getSharedPreferences(MY_PREFS_NAME, Context.MODE_PRIVATE).getString("group", null)
         //TODO Fix
-        val targetName = "test"
         for(room in rooms){
-            if(room.name.equals(targetName)){
+            if(room.name == this.groupName){
                 myRoom = room
                 break
             }
@@ -124,12 +131,16 @@ class RoomActivity : AppCompatActivity() {
 
     private fun createNewRow(title: String, votes: Int, checked: Boolean): TableRow? {
         val row = TableRow(this)
-        val layoutParams = TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.MATCH_PARENT)
+        val layoutParams = TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.MATCH_PARENT)
 
 
         row.layoutParams = layoutParams
 
         val checkBox = CheckBox(this)
+        checkBox.isChecked = checked
+        checkBox.setOnCheckedChangeListener {buttonView, isChecked -> handleVoteCheckBoxChecked(buttonView, isChecked)
+        }
+        val titleTextView = TitleTextView(this)
         checkBox.layoutParams = TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.MATCH_PARENT, 1.0f)
 
         val textView = TextView(this)
@@ -139,16 +150,38 @@ class RoomActivity : AppCompatActivity() {
         numVotes.layoutParams = TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.MATCH_PARENT, 2.0f)
 
 
-        textView.text = title
+        titleTextView.text = title
 
 
         numVotes.text = votes.toString()
 
-        row.addView(textView)
+        row.addView(titleTextView)
         row.addView(numVotes)
         row.addView(checkBox)
 
         return row
+    }
+
+    /**
+     * Handle when a voting check box is (un)selected.
+     */
+    private fun handleVoteCheckBoxChecked(buttonView: CompoundButton?, checked: Boolean) {
+        if (checked) {
+            val gridRowView = buttonView?.parent as TableRow
+
+            // Find child that contains the title
+            for (i in 0..gridRowView.childCount) {
+                when (gridRowView.getChildAt(i)) {
+                    is TitleTextView -> {
+                        val url: String = (gridRowView.getChildAt(i) as TextView).text.toString()
+                        makeVote(url, this.username, this.groupName)
+                        Toast.makeText(this, (gridRowView.getChildAt(i) as TextView).text, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
+
+        }
     }
 
     @Override
@@ -210,15 +243,13 @@ class RoomActivity : AppCompatActivity() {
         if(intent != null){
             editor.putString("url", intent.extras.get(Intent.EXTRA_TEXT).toString())
             editor.apply()
-            //TODO:FIX
-            var groupName = getSharedPreferences(MY_PREFS_NAME, Context.MODE_PRIVATE).getString("group", null)
             var videoURL = getSharedPreferences(MY_PREFS_NAME, Context.MODE_PRIVATE).getString("url", null)
-            sendVotingPost("gosho", groupName, "TestTitle", videoURL)
+            sendVotingPost(this.username, this.groupName, videoURL)
         }
 
     }
 
-    private fun sendVotingPost(username: String, roomName: String, title: String, videoURL:String){
+    private fun sendVotingPost(username: String, roomName: String, videoURL:String){
         val url = URL("http://musicvoter.viktorbarzin.me/api/vote/$roomName")
         val connection = url.openConnection() as HttpURLConnection
         connection.requestMethod = "POST"
