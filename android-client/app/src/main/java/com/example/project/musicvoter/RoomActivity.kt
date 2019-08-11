@@ -1,11 +1,17 @@
 package com.example.project.musicvoter
 
-import android.support.v7.app.AppCompatActivity
-import android.os.Bundle
 import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.content.ClipboardManager
+import android.os.Bundle
+import android.support.v7.app.AppCompatActivity
+import android.view.View
+import android.widget.CheckBox
+import android.widget.CompoundButton
+import android.widget.TableRow
+import android.widget.TextView
+import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_room.*
 import org.json.JSONObject
 import java.io.DataOutputStream
@@ -13,15 +19,14 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import android.util.DisplayMetrics
-import android.view.View
-import android.widget.*
 
 
 class RoomActivity : AppCompatActivity() {
     var MY_PREFS_NAME = "MyPrefsFile"
     private lateinit var username: String
     private lateinit var groupName: String
+
+    //var title = "" //title of the song from YouTube
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,7 +55,7 @@ class RoomActivity : AppCompatActivity() {
 
         if (myRoom != null) {
             for(voteOption in myRoom.votes){
-                tableLayout.addView(createNewRow(voteOption.key, voteOption.value.size, true))
+                tableLayout.addView(createNewRow(getSontTitle(voteOption.key), voteOption.value.size, true))
 
             }
         }
@@ -65,17 +70,10 @@ class RoomActivity : AppCompatActivity() {
         var item = clipboard.primaryClip.getItemAt(0)
         var songURL = item.text.toString()
 
-        var title = ""
 
-        var t = Thread( Runnable {
-            title = JSONObject(URL("http://www.youtube.com/oembed?url=" +
-                    songURL + "&format=json").readText()).getString("title")
-        })
+        val title = getSontTitle(songURL)
 
-        t.start()
-        t.join()
 
-        tableLayout.addView(createNewRow(title, 5, true))
 
         var url = URL("http://musicvoter.viktorbarzin.me/api/vote/$group")
 
@@ -105,28 +103,56 @@ class RoomActivity : AppCompatActivity() {
         Toast.makeText(this, "Text Copied", Toast.LENGTH_SHORT).show()
     }
 
+    private fun getSontTitle(songURL: String): String{
+        var title: JSONObject? = null
+        var response: String
+        var t = Thread( Runnable {
+            try {
+                title = JSONObject(URL("""http://www.youtube.com/oembed?url=$songURL&format=json""").readText())
+            } catch (e: Exception){
+                title = null
+            }
+
+
+        })
+
+        t.start()
+        t.join()
+
+        if(title == null){
+            response = songURL
+        } else{
+            response = title!!.getString("title")
+
+        }
+
+        return response
+    }
+
     private fun createNewRow(title: String, votes: Int, checked: Boolean): TableRow? {
         val row = TableRow(this)
-        val layoutParams = TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.MATCH_PARENT)
+        val layoutParams = TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.MATCH_PARENT)
 
-        val displayMetrics = DisplayMetrics()
-        windowManager.defaultDisplay.getMetrics(displayMetrics)
-        val height = displayMetrics.heightPixels
-        val width = displayMetrics.widthPixels
 
         row.layoutParams = layoutParams
+
         val checkBox = CheckBox(this)
         checkBox.isChecked = checked
         checkBox.setOnCheckedChangeListener {buttonView, isChecked -> handleVoteCheckBoxChecked(buttonView, isChecked)
         }
         val titleTextView = TitleTextView(this)
-        val numVotes = TextView(this)
+        checkBox.layoutParams = TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.MATCH_PARENT, 1.0f)
 
-        titleTextView.width = (width * 0.5).toInt()
-        titleTextView.height= (height * 0.2).toInt()
+        val textView = TextView(this)
+        textView.layoutParams = TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.MATCH_PARENT, 3.0f)
+
+        val numVotes = TextView(this)
+        numVotes.layoutParams = TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.MATCH_PARENT, 2.0f)
+
+
         titleTextView.text = title
 
-        numVotes.width = (width* 0.1).toInt()
+
         numVotes.text = votes.toString()
 
         row.addView(titleTextView)
@@ -198,7 +224,7 @@ class RoomActivity : AppCompatActivity() {
         if (extras.get(Intent.EXTRA_TEXT) != null) {
 
             var link = prefs.getString("url", extras.get(Intent.EXTRA_TEXT).toString())
-            //makeVote(link,username, group)
+            makeVote(link,username, group)
             extras.remove(Intent.EXTRA_TEXT)
         }
 
@@ -259,7 +285,12 @@ class RoomActivity : AppCompatActivity() {
 
     fun getVoteOptions(view: View){
         val rooms = JSONParser().parseJSON(JSONHandler().outputFromGet())
+        clearCurrentInfo()
         displayInfoForRoom(rooms)
+    }
+
+    fun clearCurrentInfo(){
+        tableLayout.removeAllViews()
     }
 }
 
