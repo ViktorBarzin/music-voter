@@ -64,16 +64,21 @@ def get_votes(room_name: str) -> Dict[str, List[User]]:
     return votes_dict
 
 
-def vote(voter: User, url: str, room_name: str) -> str:
+def vote(voter: User, url: str, room_name: str, is_voting: bool) -> str:
     room = get_room_by_name(room_name)
     if not room:
         raise ValueError(f'Room with name {room_name} not found')
 
-    try:
-        get_db().create_vote(voter.id, url, room.id)
-    except sqlite3.IntegrityError:
-        # If user has already voted for this, it's fine
-        pass
+    # if voting
+    if is_voting:
+        try:
+            get_db().create_vote(voter.id, url, room.id)
+        except sqlite3.IntegrityError:
+            # If user has already voted for this, it's fine
+            pass
+    # if "unvoting"
+    else:
+        get_db().remove_vote(voter.id, url, room.id)
     return url
 
 
@@ -178,8 +183,12 @@ class Database:
         self.cursor.execute('''INSERT INTO vote(url, voter_id, room_id) VALUES (?,?,?)''', [url, voter_uid, room_id])
         self.conn.commit()
 
+    def remove_vote(self, voter_uid: int, url: str, room_id: int) -> None:
+        self.cursor.execute('''DELETE FROM vote WHERE url = (?) AND voter_id = (?) AND room_id = (?)''', [url, voter_uid, room_id])
+
     def get_votes(self, room_id: int) -> Dict[str, List[User]]:
         rows = self.cursor.execute('''SELECT url, voter_id FROM vote WHERE room_id = (?)''', [room_id]).fetchall()
+        self.conn.commit()
         votes: Dict[str, List[User]] = defaultdict(list)
         for row in rows:
             url = row[0]
