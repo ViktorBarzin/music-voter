@@ -1,4 +1,5 @@
 import sqlite3
+import threading
 from collections import defaultdict
 from typing import Dict, List, Optional, Set
 from room import Room, User
@@ -7,6 +8,7 @@ from room import Room, User
 ROOMS: Set[Room] = set()  # this should be loaded from persistent storage at some point
 DB_SINGLETON = None
 DB_NAME = 'databse.db'
+LOCK = threading.Lock()
 
 
 def get_db(db_name: str = DB_NAME) -> 'Database':
@@ -82,6 +84,15 @@ def vote(voter: User, url: str, room_name: str, is_voting: bool) -> str:
     return url
 
 
+def lock(func):
+    def inner(*args, **kwargs):
+        LOCK.acquire()
+        res = func(*args, **kwargs)
+        LOCK.release()
+        return res
+    return inner
+
+
 class Database:
     db_path: str
 
@@ -122,10 +133,13 @@ class Database:
                             )''')
         self.conn.commit()
 
+    # @lock
     def create_user(self, user: User) -> User:
         '''
         Try to save user to db. Return
         '''
+        self.conn = sqlite3.connect(self.db_path)
+        self.cursor = self.conn.cursor()
         try:
             self.cursor.execute('''INSERT INTO user(username) VALUES (?)''', [user.username])
             self.conn.commit()
@@ -135,7 +149,11 @@ class Database:
             raise ValueError(f'User with username {user.username} exists')
 
     def get_users(self) -> List[User]:
+        self.conn = sqlite3.connect(self.db_path)
+        self.cursor = self.conn.cursor()
+
         rows = self.cursor.execute('SELECT * FROM user').fetchall()
+        self.conn.commit()
         users_list: List[User] = []
         for row in rows:
             user = User(uid=int(row[0]), username=row[1])
@@ -152,14 +170,22 @@ class Database:
         except StopIteration:
             return None
 
+    # @lock
     def create_room(self, room: Room):
+        self.conn = sqlite3.connect(self.db_path)
+        self.cursor = self.conn.cursor()
+
         try:
             self.cursor.execute('''INSERT INTO room(name, password, owner) VALUES (?,?,?)''', [room.name, room.password, room.owner.id])
             self.conn.commit()
         except sqlite3.IntegrityError:
             raise ValueError(f'Room with name {room.name} exists')
 
+    # @lock
     def get_rooms(self) -> List[Room]:
+        self.conn = sqlite3.connect(self.db_path)
+        self.cursor = self.conn.cursor()
+
         query = self.cursor.execute('SELECT * FROM room')
         rows = query.fetchall()
         self.conn.commit()
@@ -179,14 +205,27 @@ class Database:
             rooms_list.append(room)
         return rooms_list
 
+    # @lock
     def create_vote(self, voter_uid: int, url: str, room_id: int) -> None:
+        self.conn = sqlite3.connect(self.db_path)
+        self.cursor = self.conn.cursor()
+
         self.cursor.execute('''INSERT INTO vote(url, voter_id, room_id) VALUES (?,?,?)''', [url, voter_uid, room_id])
         self.conn.commit()
 
+    # @lock
     def remove_vote(self, voter_uid: int, url: str, room_id: int) -> None:
-        self.cursor.execute('''DELETE FROM vote WHERE url = (?) AND voter_id = (?) AND room_id = (?)''', [url, voter_uid, room_id])
+        self.conn = sqlite3.connect(self.db_path)
+        self.cursor = self.conn.cursor()
 
+        self.cursor.execute('''DELETE FROM vote WHERE url = (?) AND voter_id = (?) AND room_id = (?)''', [url, voter_uid, room_id])
+        self.conn.commit()
+
+    # @lock
     def get_votes(self, room_id: int) -> Dict[str, List[User]]:
+        self.conn = sqlite3.connect(self.db_path)
+        self.cursor = self.conn.cursor()
+
         rows = self.cursor.execute('''SELECT url, voter_id FROM vote WHERE room_id = (?)''', [room_id]).fetchall()
         self.conn.commit()
         votes: Dict[str, List[User]] = defaultdict(list)
