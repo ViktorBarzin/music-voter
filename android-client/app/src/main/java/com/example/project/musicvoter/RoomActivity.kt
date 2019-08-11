@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.view.Gravity
 import android.view.View
 import android.widget.CheckBox
 import android.widget.CompoundButton
@@ -61,7 +62,7 @@ class RoomActivity : AppCompatActivity() {
         }
     }
 
-    private fun makeVote(link: String?, username: String, group: String){
+    private fun makeVote(link: String, username: String, group: String, addingVote: Boolean){
 
         var clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         var clip = ClipData.newPlainText("link", link)
@@ -71,13 +72,16 @@ class RoomActivity : AppCompatActivity() {
         var songURL = item.text.toString()
 
 
-        val title = getSontTitle(songURL)
-
+        val addVoteValue = if (addingVote) {
+            "true"
+        } else {
+            "false"
+        }
 
 
         var url = URL("http://musicvoter.viktorbarzin.me/api/vote/$group")
 
-        var message = "title=${URLEncoder.encode(title, "UTF-8")}&url=$songURL&username=$username"
+        var message = "url=$songURL&username=$username&add_vote=$addVoteValue"
 
         var connection = url.openConnection() as HttpURLConnection
         connection.requestMethod = "POST"
@@ -131,31 +135,29 @@ class RoomActivity : AppCompatActivity() {
 
     private fun createNewRow(title: String, votes: Int, checked: Boolean): TableRow? {
         val row = TableRow(this)
-        val layoutParams = TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.MATCH_PARENT)
+        val layoutParams = TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.MATCH_PARENT)
 
 
         row.layoutParams = layoutParams
+
+        val textView = TitleTextView(this)
+        textView.layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.MATCH_PARENT, 4.0f)
+        textView.text = title
+
+        val numVotes = TextView(this)
+        numVotes.layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.MATCH_PARENT, 2.0f)
+        numVotes.gravity = Gravity.CENTER
 
         val checkBox = CheckBox(this)
         checkBox.isChecked = checked
         checkBox.setOnCheckedChangeListener {buttonView, isChecked -> handleVoteCheckBoxChecked(buttonView, isChecked)
         }
-        val titleTextView = TitleTextView(this)
-        checkBox.layoutParams = TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.MATCH_PARENT, 1.0f)
 
-        val textView = TextView(this)
-        textView.layoutParams = TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.MATCH_PARENT, 3.0f)
-
-        val numVotes = TextView(this)
-        numVotes.layoutParams = TableRow.LayoutParams(TableRow.LayoutParams.MATCH_PARENT, TableRow.LayoutParams.MATCH_PARENT, 2.0f)
-
-
-        titleTextView.text = title
-
+        checkBox.layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.MATCH_PARENT, 1.0f)
 
         numVotes.text = votes.toString()
 
-        row.addView(titleTextView)
+        row.addView(textView)
         row.addView(numVotes)
         row.addView(checkBox)
 
@@ -174,7 +176,7 @@ class RoomActivity : AppCompatActivity() {
                 when (gridRowView.getChildAt(i)) {
                     is TitleTextView -> {
                         val url: String = (gridRowView.getChildAt(i) as TextView).text.toString()
-                        makeVote(url, this.username, this.groupName)
+                        makeVote(url, this.username, this.groupName, checked)
                         Toast.makeText(this, (gridRowView.getChildAt(i) as TextView).text, Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -224,7 +226,7 @@ class RoomActivity : AppCompatActivity() {
         if (extras.get(Intent.EXTRA_TEXT) != null) {
 
             var link = prefs.getString("url", extras.get(Intent.EXTRA_TEXT).toString())
-            makeVote(link,username, group)
+            makeVote(link,username, group, true)
             extras.remove(Intent.EXTRA_TEXT)
         }
 
