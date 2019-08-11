@@ -26,21 +26,23 @@ class RoomActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_room)
-        this.username = intent.extras!!.getString("username")!!
-        this.groupName = intent.extras!!.getString("group")!!
 
-        Toast.makeText(this, "Welcome " + this.username, Toast.LENGTH_SHORT).show()
+        if (intent.extras != null && intent.extras.getString("username") != null) {
+            GlobalState.username = intent.extras!!.getString("username")!!
+        }
 
-        val rooms = JSONParser().parseJSON(JSONHandler().outputFromGet())
-        displayInfoForRoom(rooms)
+        if (intent.extras != null && intent.extras.getString("group") != null) {
+            GlobalState.group = intent.extras!!.getString("group")!!
+        }
 
+        this.refreshRoomActivity()
     }
 
     private fun displayInfoForRoom(rooms: List<Room>){
         var myRoom: Room? = null
        // var targetName = getSharedPreferences(MY_PREFS_NAME, Context.MODE_PRIVATE).getString("group", null)
        for(room in rooms){
-            if(room.name == this.groupName){
+            if(room.name == GlobalState.group){
                 myRoom = room
                 break
             }
@@ -50,7 +52,7 @@ class RoomActivity : AppCompatActivity() {
         if (myRoom != null) {
             for(voteOption in myRoom.votes){
                 // Check if current user has voted
-                var hasVoted = voteOption.value.any { x: User -> x.username == this.username }
+                var hasVoted = voteOption.value.any { x: User -> x.username == GlobalState.username }
                 val songTitle = this.getSongTitle(voteOption.key)
                 this.titleUrlMap[songTitle] = voteOption.key
                 tableLayout.addView(createNewRow(getSongTitle(voteOption.key), voteOption.value.size, hasVoted))
@@ -93,7 +95,6 @@ class RoomActivity : AppCompatActivity() {
             print(connection.responseCode)
         }).start()
 
-        Toast.makeText(this, "Text Copied", Toast.LENGTH_SHORT).show()
     }
 
     private fun getSongTitle(songURL: String): String{
@@ -165,14 +166,11 @@ class RoomActivity : AppCompatActivity() {
                 is TitleTextView -> {
                     val title: String = (gridRowView.getChildAt(i) as TextView).text.toString()
                     val songUrl = this.titleUrlMap.get(title)!!
-                    makeVote(songUrl, this.username, this.groupName, checked)
-                    Toast.makeText(this, (gridRowView.getChildAt(i) as TextView).text, Toast.LENGTH_SHORT).show()
+                    makeVote(songUrl, GlobalState.username, GlobalState.group, checked)
                 }
             }
         }
-        this.clearCurrentInfo()
-        val rooms = JSONParser().parseJSON(JSONHandler().outputFromGet())
-        displayInfoForRoom(rooms)
+        this.refreshRoomActivity()
     }
 
     @Override
@@ -217,8 +215,9 @@ class RoomActivity : AppCompatActivity() {
             var link = prefs.getString("url", extras.get(Intent.EXTRA_TEXT).toString())
             makeVote(link,username, group, true)
             extras.remove(Intent.EXTRA_TEXT)
-        }
 
+        }
+        this.refreshRoomActivity()
     }
 
     @Override
@@ -235,7 +234,7 @@ class RoomActivity : AppCompatActivity() {
             editor.putString("url", intent.extras.get(Intent.EXTRA_TEXT).toString())
             editor.apply()
             var videoURL = getSharedPreferences(MY_PREFS_NAME, Context.MODE_PRIVATE).getString("url", null)
-            sendVotingPost(this.username, this.groupName, videoURL)
+            sendVotingPost(GlobalState.username, GlobalState.group, videoURL)
         }
 
     }
@@ -275,13 +274,19 @@ class RoomActivity : AppCompatActivity() {
     }
 
     fun getVoteOptions(view: View){
-        val rooms = JSONParser().parseJSON(JSONHandler().outputFromGet())
-        clearCurrentInfo()
-        displayInfoForRoom(rooms)
+        Toast.makeText(this, "Refreshing", Toast.LENGTH_SHORT).show()
+        this.refreshRoomActivity()
     }
 
     fun clearCurrentInfo(){
         tableLayout.removeAllViews()
+    }
+
+    private fun refreshRoomActivity() {
+        this.clearCurrentInfo()
+        val rooms = JSONParser().parseJSON(JSONHandler().outputFromGet())
+        displayInfoForRoom(rooms)
+
     }
 }
 

@@ -1,15 +1,14 @@
 package com.example.project.musicvoter
 
 import android.content.Intent
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.support.v7.app.AppCompatActivity
 import android.view.View
-import android.widget.ArrayAdapter
-import kotlinx.android.synthetic.main.activity_join.*
 import android.widget.AdapterView
 import android.widget.AdapterView.OnItemSelectedListener
+import android.widget.ArrayAdapter
 import android.widget.Toast
-import kotlinx.android.synthetic.main.activity_create.*
+import kotlinx.android.synthetic.main.activity_join.*
 import java.io.DataOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
