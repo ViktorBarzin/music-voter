@@ -1,7 +1,7 @@
 import json
 import urllib.parse
 from collections import defaultdict
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from flask import Flask, request, Response
 app = Flask(__name__)
 
@@ -76,7 +76,13 @@ def vote_endpoint(room_name: str = '') -> Response:
 def _vote_post(request: LocalProxy, room: Room) -> Response:
     try:
         url = request.form['url']
-        is_voting = True if request.form['add_vote'] == 'true' else False if request.form['add_vote'] == 'false' else None
+        is_voting: Optional[bool]
+        if request.form['add_vote'] == 'true':
+            is_voting = True
+        elif request.form['add_vote'] == 'false':
+            is_voting = False
+        else:
+            is_voting = None
         voter_username = request.form['username']  # replace with sessions
     except KeyError:
         return get_error_response(f'Required params: "url", "username", "add_vote"')
@@ -84,7 +90,7 @@ def _vote_post(request: LocalProxy, room: Room) -> Response:
     voter = get_user_from_username(voter_username)
     if not voter:
         return get_error_response(f'User {voter_username} not found.')
-    if not is_voting:
+    if is_voting is None:
         add_vote_param = request.form['add_vote']
         return get_error_response(f'"add_vote" param must be either "true" or "false", got {add_vote_param}')
     vote(voter, url, room.name, is_voting)

@@ -10,13 +10,13 @@ import java.net.URL
 
 class JSONHandler {
     val httpURLConnectionurl = URL("http://musicvoter.viktorbarzin.me/api/rooms")
-    val urlConnection = httpURLConnectionurl.openConnection() as HttpURLConnection
+//    val urlConnection = httpURLConnectionurl.openConnection() as HttpURLConnection
     var response = ""
 
     fun outputFromGet(): String{
         if(httpURLConnectionurl != null){
             val t =  Thread(Runnable {
-                val inputStream = BufferedInputStream(urlConnection.getInputStream())
+//                val inputStream = BufferedInputStream(urlConnection.getInputStream())
                 response  = httpURLConnectionurl.readText()
 
             })

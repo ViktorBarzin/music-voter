@@ -1,29 +1,23 @@
 package com.example.project.musicvoter
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.Gravity
 import android.view.View
-import android.widget.CheckBox
-import android.widget.CompoundButton
-import android.widget.TableRow
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import kotlinx.android.synthetic.main.activity_room.*
 import org.json.JSONObject
 import java.io.DataOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
-import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 
 class RoomActivity : AppCompatActivity() {
     var MY_PREFS_NAME = "MyPrefsFile"
+    private val titleUrlMap = HashMap<String, String>()
     private lateinit var username: String
     private lateinit var groupName: String
 
@@ -45,8 +39,7 @@ class RoomActivity : AppCompatActivity() {
     private fun displayInfoForRoom(rooms: List<Room>){
         var myRoom: Room? = null
        // var targetName = getSharedPreferences(MY_PREFS_NAME, Context.MODE_PRIVATE).getString("group", null)
-        //TODO Fix
-        for(room in rooms){
+       for(room in rooms){
             if(room.name == this.groupName){
                 myRoom = room
                 break
@@ -56,21 +49,17 @@ class RoomActivity : AppCompatActivity() {
 
         if (myRoom != null) {
             for(voteOption in myRoom.votes){
-                tableLayout.addView(createNewRow(getSongTitle(voteOption.key), voteOption.value.size, true))
+                // Check if current user has voted
+                var hasVoted = voteOption.value.any { x: User -> x.username == this.username }
+                val songTitle = this.getSongTitle(voteOption.key)
+                this.titleUrlMap[songTitle] = voteOption.key
+                tableLayout.addView(createNewRow(getSongTitle(voteOption.key), voteOption.value.size, hasVoted))
 
             }
         }
     }
 
-    private fun makeVote(link: String, username: String, group: String, addingVote: Boolean){
-
-        var clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        var clip = ClipData.newPlainText("link", link)
-        clipboard.setPrimaryClip(clip)
-
-        var item = clipboard.primaryClip.getItemAt(0)
-        var songURL = item.text.toString()
-
+    private fun makeVote(song_url: String, username: String, group: String, addingVote: Boolean){
 
         val addVoteValue = if (addingVote) {
             "true"
@@ -81,7 +70,7 @@ class RoomActivity : AppCompatActivity() {
 
         var url = URL("http://musicvoter.viktorbarzin.me/api/vote/$group")
 
-        var message = "url=$songURL&username=$username&add_vote=$addVoteValue"
+        var message = "url=$song_url&username=$username&add_vote=$addVoteValue"
 
         var connection = url.openConnection() as HttpURLConnection
         connection.requestMethod = "POST"
@@ -168,22 +157,22 @@ class RoomActivity : AppCompatActivity() {
      * Handle when a voting check box is (un)selected.
      */
     private fun handleVoteCheckBoxChecked(buttonView: CompoundButton?, checked: Boolean) {
-        if (checked) {
-            val gridRowView = buttonView?.parent as TableRow
+        val gridRowView = buttonView?.parent as TableRow
 
-            // Find child that contains the title
-            for (i in 0..gridRowView.childCount) {
-                when (gridRowView.getChildAt(i)) {
-                    is TitleTextView -> {
-                        val url: String = (gridRowView.getChildAt(i) as TextView).text.toString()
-                        makeVote(url, this.username, this.groupName, checked)
-                        Toast.makeText(this, (gridRowView.getChildAt(i) as TextView).text, Toast.LENGTH_SHORT).show()
-                    }
+        // Find child that contains the title
+        for (i in 0..gridRowView.childCount) {
+            when (gridRowView.getChildAt(i)) {
+                is TitleTextView -> {
+                    val title: String = (gridRowView.getChildAt(i) as TextView).text.toString()
+                    val songUrl = this.titleUrlMap.get(title)!!
+                    makeVote(songUrl, this.username, this.groupName, checked)
+                    Toast.makeText(this, (gridRowView.getChildAt(i) as TextView).text, Toast.LENGTH_SHORT).show()
                 }
             }
-
-
         }
+        this.clearCurrentInfo()
+        val rooms = JSONParser().parseJSON(JSONHandler().outputFromGet())
+        displayInfoForRoom(rooms)
     }
 
     @Override
