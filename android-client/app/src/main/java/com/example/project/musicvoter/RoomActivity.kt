@@ -21,8 +21,6 @@ class RoomActivity : AppCompatActivity() {
     private lateinit var username: String
     private lateinit var groupName: String
 
-    //var title = "" //title of the song from YouTube
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_room)
@@ -131,7 +129,7 @@ class RoomActivity : AppCompatActivity() {
         row.layoutParams = layoutParams
 
         val textView = TitleTextView(this)
-        textView.layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.MATCH_PARENT, 4.0f)
+        textView.layoutParams = TableRow.LayoutParams(0, TableRow.LayoutParams.MATCH_PARENT, 5.0f)
         textView.text = title
 
         val numVotes = TextView(this)
