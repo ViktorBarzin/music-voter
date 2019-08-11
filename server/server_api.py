@@ -75,7 +75,6 @@ def vote_endpoint(room_name: str = '') -> Response:
 
 def _vote_post(request: LocalProxy, room: Room) -> Response:
     try:
-        title = request.form['title']
         url = request.form['url']
         voter_username = request.form['username']  # replace with sessions
     except KeyError:

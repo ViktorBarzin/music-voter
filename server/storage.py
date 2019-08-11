@@ -155,7 +155,9 @@ class Database:
             raise ValueError(f'Room with name {room.name} exists')
 
     def get_rooms(self) -> List[Room]:
-        rows = self.cursor.execute('SELECT * FROM room').fetchall()
+        query = self.cursor.execute('SELECT * FROM room')
+        rows = query.fetchall()
+        self.conn.commit()
         rooms_list: List[Room] = []
         for row in rows:
             room_id = int(row[0])
