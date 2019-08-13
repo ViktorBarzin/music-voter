@@ -2,6 +2,7 @@ package com.example.project.musicvoter
 
 import android.content.Context
 import android.content.Intent
+import android.os.AsyncTask
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.view.Gravity
@@ -156,19 +157,37 @@ class RoomActivity : AppCompatActivity() {
      * Handle when a voting check box is (un)selected.
      */
     private fun handleVoteCheckBoxChecked(buttonView: CompoundButton?, checked: Boolean) {
-        val gridRowView = buttonView?.parent as TableRow
+        buttonView?.isChecked = checked
+        // Post vote on separate thread and update UI once done
+        UpdateRoomUI(buttonView, checked).execute()
+    }
 
-        // Find child that contains the title
-        for (i in 0..gridRowView.childCount) {
-            when (gridRowView.getChildAt(i)) {
-                is TitleTextView -> {
-                    val title: String = (gridRowView.getChildAt(i) as TextView).text.toString()
-                    val songUrl = this.titleUrlMap.get(title)!!
-                    makeVote(songUrl, GlobalState.username, GlobalState.group, checked)
+    inner class UpdateRoomUI(buttonView: CompoundButton?, checked: Boolean): AsyncTask<Void, Void, Void>() {
+        private val buttonView = buttonView
+        private val checked = checked
+
+        override fun doInBackground(vararg p0: Void?): Void?{
+
+            val gridRowView = buttonView?.parent as TableRow
+
+            // Find child that contains the title
+            for (i in 0..gridRowView.childCount) {
+                when (gridRowView.getChildAt(i)) {
+                    is TitleTextView -> {
+                        val title: String = (gridRowView.getChildAt(i) as TextView).text.toString()
+                        val songUrl = titleUrlMap[title]!!
+                        makeVote(songUrl, GlobalState.username, GlobalState.group, checked)
+                    }
                 }
             }
+            return null
         }
-        this.refreshRoomActivity()
+
+        override fun onPostExecute(result: Void?) {
+            super.onPostExecute(result)
+            refreshRoomActivity()
+        }
+
     }
 
     @Override
