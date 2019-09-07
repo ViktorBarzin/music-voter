@@ -33,8 +33,10 @@ class RoomActivity : AppCompatActivity() {
         if (intent.extras != null && intent.extras.getString("group") != null) {
             GlobalState.group = intent.extras!!.getString("group")!!
         }
+        refreshButton.setSafeOnClickListener { getVoteOptions(this.findViewById(R.id.refreshButton)) }
 
         this.refreshRoomActivity()
+
     }
 
     private fun displayInfoForRoom(rooms: List<Room>){
@@ -289,6 +291,15 @@ class RoomActivity : AppCompatActivity() {
         getSharedPreferences(MY_PREFS_NAME, Context.MODE_PRIVATE).edit().clear().apply()
 
     }
+
+    fun View.setSafeOnClickListener(onSafeClick: (View) -> Unit) {
+        val safeClickListener = SafeClickListener {
+            onSafeClick(it)
+        }
+        setOnClickListener(safeClickListener)
+    }
+
+
 
     fun getVoteOptions(view: View){
         Toast.makeText(this, "Refreshing", Toast.LENGTH_SHORT).show()
